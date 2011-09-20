@@ -2,8 +2,10 @@
 #include <fcntl.h>
 #include <linux/types.h>
 #include <nbd.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -15,7 +17,13 @@ int abuse_main(int argc, char *argv[], struct abuse_operations *aop)
 {
     int sp[2];
     int nbd, sk, err, tmp_fd;
+    u_int64_t from;
+    u_int32_t len;
+    int bytes_written, bytes_read;
     char *dev_file;
+    struct nbd_request request;
+    struct nbd_reply reply;
+    void *chunk;
 
     assert(argc == 2);
     dev_file = argv[1];
@@ -53,6 +61,35 @@ int abuse_main(int argc, char *argv[], struct abuse_operations *aop)
 
     close(sp[1]);
     sk = sp[0];
+
+    reply.magic = htonl(NBD_REPLY_MAGIC);
+    reply.error = htonl(0);
+
+    while (1) {
+        bytes_read = read(sk, &request, sizeof(request));
+        assert(bytes_read == sizeof(request));
+        memcpy(reply.handle, request.handle, sizeof(reply.handle));
+
+        /* FIXME: these might need conversion from the network byte order. */
+        len = ntohl(request.len);
+        from = request.from;
+        assert(request.magic == htonl(NBD_REQUEST_MAGIC));
+
+        switch(ntohl(request.type)) {
+            case NBD_CMD_READ:
+                chunk = malloc(len + sizeof(struct nbd_reply));
+                memset((char *)chunk + sizeof(struct nbd_reply), 0, len);
+                memcpy(chunk, &reply, sizeof(struct nbd_reply));
+                bytes_written = write(sk, chunk, len + sizeof(struct nbd_reply));
+                fprintf(stderr, "Wrote %d bytes.\n", bytes_written);
+                assert(bytes_written == len + sizeof(struct nbd_reply));
+                free(chunk);
+                break;
+            /* We'll not worry about the other cases for now. */
+            default:
+                break;
+        }
+    }
 
     return 0;
 }

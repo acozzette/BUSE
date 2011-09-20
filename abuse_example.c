@@ -4,5 +4,8 @@
 
 int main(int argc, char *argv[])
 {
-    return abuse_main(argc, argv, NULL);
+    struct abuse_operations aop;
+    aop.size = 1024;
+
+    return abuse_main(argc, argv, &aop);
 }
