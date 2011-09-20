@@ -1,12 +1,12 @@
-TARGET	:= abuse
+TARGET	:= abuse_example
 OBJS	:= $(TARGET:=.o)
 
-CC		:= /usr/bin/gcc
-CFLAGS	:= -g -pedantic -Wall -Wextra -I$(HOME)/local/include -I$(HOME)/src/nbd
+C		:= /usr/bin/gcc
+CFLAGS	:= -g -pedantic -Wall -Wextra -std=c99 -I$(HOME)/local/include -I$(HOME)/src/nbd
 LDFLAGS	:= -lz
 
 .PHONY: all clean
-all: $(TARGET)
+all: $(TARGET) abuse.h
 
 $(TARGET): %: %.o
 	$(CC) $(LDFLAGS) -o $@ $<
