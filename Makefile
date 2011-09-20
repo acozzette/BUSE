@@ -1,4 +1,4 @@
-TARGET	:= abuse_example
+TARGET	:= abusexmp
 OBJS	:= $(TARGET:=.o) abuse.o
 
 C		:= /usr/bin/gcc
