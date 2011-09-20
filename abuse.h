@@ -4,8 +4,8 @@
 #include <sys/types.h>
 
 struct abuse_operations {
-    void (*read)();
-    void (*write)();
+    int (*read)(void *buf, u_int32_t len, u_int64_t offset);
+    int (*write)(const void *buf, u_int32_t len, u_int64_t offset);
     void (*disc)();
     void (*flush)();
     void (*trim)();
@@ -13,6 +13,6 @@ struct abuse_operations {
     u_int64_t size;
 };
 
-int abuse_main(int argc, char *argv[], struct abuse_operations *aop);
+int abuse_main(int argc, char *argv[], const struct abuse_operations *aop, void *userdata);
 
 #endif /* ABUSE_H_INCLUDED */
