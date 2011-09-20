@@ -88,8 +88,8 @@ int abuse_main(int argc, char *argv[], const struct abuse_operations *aop, void 
                 /* assert(bytes_written == len + sizeof(struct nbd_reply)); */
                 free(chunk);
                 break;
-            /* We'll not worry about the other cases for now. */
             default:
+                /* We'll not worry about the other cases for now. */
                 break;
         }
     }
