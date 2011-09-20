@@ -8,10 +8,10 @@ LDFLAGS	:=
 .PHONY: all clean
 all: $(TARGET)
 
-$(TARGET): $(OBJS) abuse.h
+$(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^
 
-$(OBJS): %.o: %.c
+$(OBJS): %.o: %.c abuse.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
