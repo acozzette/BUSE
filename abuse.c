@@ -1,6 +1,4 @@
-#include "abuse.h"
-
-int main()
+int abuse_main()
 {
-    return abuse_main();
+    return 0;
 }

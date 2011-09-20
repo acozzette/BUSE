@@ -9,4 +9,6 @@ struct abuse_operations {
     void (*trim)();
 };
 
+int abuse_main();
+
 #endif /* ABUSE_H_INCLUDED */
