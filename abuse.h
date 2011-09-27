@@ -13,6 +13,7 @@ struct abuse_operations {
     u_int64_t size;
 };
 
-int abuse_main(int argc, char *argv[], const struct abuse_operations *aop, void *userdata);
+int abuse_main(int argc, char *argv[], const struct abuse_operations *aop,
+        void *userdata);
 
 #endif /* ABUSE_H_INCLUDED */

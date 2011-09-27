@@ -13,6 +13,24 @@
 
 #include "abuse.h"
 
+/*
+ * These helper functions were taken from cliserv.h in the nbd distribution.
+ */
+#ifdef WORDS_BIGENDIAN
+u_int64_t ntohll(u_int64_t a) {
+	return a;
+}
+#else
+u_int64_t ntohll(u_int64_t a) {
+	u_int32_t lo = a & 0xffffffff;
+	u_int32_t hi = a >> 32U;
+	lo = ntohl(lo);
+	hi = ntohl(hi);
+	return ((u_int64_t) lo) << 32U | hi;
+}
+#endif
+#define htonll ntohll
+
 int abuse_main(int argc, char *argv[], const struct abuse_operations *aop, void *userdata)
 {
     int sp[2];
@@ -72,9 +90,8 @@ int abuse_main(int argc, char *argv[], const struct abuse_operations *aop, void 
         assert(bytes_read == sizeof(request));
         memcpy(reply.handle, request.handle, sizeof(reply.handle));
 
-        /* FIXME: these might need conversion from the network byte order. */
         len = ntohl(request.len);
-        from = request.from;
+        from = ntohll(request.from);
         (void) from;
         assert(request.magic == htonl(NBD_REQUEST_MAGIC));
 
@@ -88,8 +105,13 @@ int abuse_main(int argc, char *argv[], const struct abuse_operations *aop, void 
                 /* assert(bytes_written == len + sizeof(struct nbd_reply)); */
                 free(chunk);
                 break;
-            default:
-                /* We'll not worry about the other cases for now. */
+            case NBD_CMD_WRITE:
+                break;
+            case NBD_CMD_DISC:
+                break;
+            case NBD_CMD_FLUSH:
+                break;
+            case NBD_CMD_TRIM:
                 break;
         }
     }
