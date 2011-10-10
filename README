@@ -1,0 +1,23 @@
+BUSE - A block device in user space
+
+Adam Cozzette
+Fall 2011
+
+This piece of code was inspired by FUSE, which allows the development of Linux
+file systems that run in user space. The goal of BUSE is to allow virtual block
+devices to run in user space as well.
+
+Currently BUSE is a work in progress and the existing code is hacked together.
+Soon I hope to finish implementing everything robustly.
+
+Implementing a block device with BUSE is fairly straightforward. Simply fill
+struct buse_operations (declared in buse.h) with function pointers that define
+the behavior of the block device, and set the size field to be the desired size
+of the device in bytes. Then call buse_main and pass it a pointer to this
+struct. busexmp.c is a simple example example that shows how this is done.
+
+The implementation of BUSE itself relies on NBD, the Linux network block device,
+which allows a remote machine to serve requests for reads and writes to a
+virtual block device on the local machine. BUSE sets up an NBD server and client
+on the same machine, with the server running executing the code defined by the
+BUSE user.
