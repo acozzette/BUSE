@@ -6,9 +6,9 @@
 struct abuse_operations {
     int (*read)(void *buf, u_int32_t len, u_int64_t offset);
     int (*write)(const void *buf, u_int32_t len, u_int64_t offset);
-    void (*disc)();
-    void (*flush)();
-    void (*trim)();
+    int (*disc)();
+    int (*flush)();
+    int (*trim)();
 
     u_int64_t size;
 };

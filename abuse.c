@@ -36,8 +36,7 @@ int abuse_main(int argc, char *argv[], const struct abuse_operations *aop, void 
     int sp[2];
     int nbd, sk, err, tmp_fd;
     u_int64_t from;
-    u_int32_t len;
-    int bytes_written, bytes_read;
+    u_int32_t len, bytes_read, bytes_written;
     char *dev_file;
     struct nbd_request request;
     struct nbd_reply reply;
@@ -92,27 +91,43 @@ int abuse_main(int argc, char *argv[], const struct abuse_operations *aop, void 
 
         len = ntohl(request.len);
         from = ntohll(request.from);
-        (void) from;
         assert(request.magic == htonl(NBD_REQUEST_MAGIC));
 
         switch(ntohl(request.type)) {
+            /* I may at some point need to deal with the the fact that the
+             * official nbd server has a maximum buffer size, and divides up
+             * oversized requests into multiple pieces. This applies to reads
+             * and writes.
+             */
             case NBD_CMD_READ:
                 chunk = malloc(len + sizeof(struct nbd_reply));
                 aop->read((char *)chunk + sizeof(struct nbd_reply), len, from);
                 memcpy(chunk, &reply, sizeof(struct nbd_reply));
                 bytes_written = write(sk, chunk, len + sizeof(struct nbd_reply));
+                assert(bytes_written == len + sizeof(struct nbd_reply));
                 fprintf(stderr, "Wrote %d bytes.\n", bytes_written);
-                /* assert(bytes_written == len + sizeof(struct nbd_reply)); */
                 free(chunk);
                 break;
             case NBD_CMD_WRITE:
+                chunk = malloc(len);
+                bytes_read = read(sk, &chunk, len);
+                assert(bytes_read == len);
+                aop->write(chunk, len, from);
+                free(chunk);
+                bytes_written = write(sk, &reply, sizeof(struct nbd_reply));
+                assert(bytes_written == sizeof(struct nbd_reply));
                 break;
             case NBD_CMD_DISC:
+                aop->disc();
                 break;
             case NBD_CMD_FLUSH:
+                aop->flush();
                 break;
             case NBD_CMD_TRIM:
+                aop->trim();
                 break;
+            default:
+                assert(0);
         }
     }
 
