@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "abuse.h"
+#include "buse.h"
 
 /*
  * These helper functions were taken from cliserv.h in the nbd distribution.
@@ -31,7 +31,7 @@ u_int64_t ntohll(u_int64_t a) {
 #endif
 #define htonll ntohll
 
-int abuse_main(int argc, char *argv[], const struct abuse_operations *aop, void *userdata)
+int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *userdata)
 {
     int sp[2];
     int nbd, sk, err, tmp_fd;

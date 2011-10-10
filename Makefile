@@ -1,5 +1,5 @@
-TARGET	:= abusexmp
-OBJS	:= $(TARGET:=.o) abuse.o
+TARGET	:= busexmp
+OBJS	:= $(TARGET:=.o) buse.o
 
 C		:= /usr/bin/gcc
 CFLAGS	:= -g -pedantic -Wall -Wextra -std=c99 -I$(HOME)/local/include -I$(HOME)/src/nbd
@@ -11,7 +11,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^
 
-$(OBJS): %.o: %.c abuse.h
+$(OBJS): %.o: %.c buse.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
