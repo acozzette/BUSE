@@ -1,18 +1,26 @@
-TARGET	:= busexmp
-OBJS	:= $(TARGET:=.o) buse.o
+TARGET		:= busexmp
+LIBOBJS 	:= buse.o
+OBJS		:= $(TARGET:=.o) $(LIBOBJS)
+SHAREDLIB	:= libbuse.so
 
-C		:= /usr/bin/gcc
-CFLAGS	:= -g -pedantic -Wall -Wextra -std=c99 -I$(HOME)/local/include -I$(HOME)/src/nbd
-LDFLAGS	:=
+CC			:= /usr/bin/gcc
+CFLAGS		:= -g -pedantic -Wall -Wextra -std=c99 -I$(HOME)/local/include -I$(HOME)/src/nbd
+LDFLAGS		:= -lbuse -L.
 
 .PHONY: all clean
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^
+$(TARGET): %: %.o lib
+	$(CC) $(LDFLAGS) -o $@ $<
 
-$(OBJS): %.o: %.c buse.h
+$(TARGET:=.o): %.o: %.c buse.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
+lib: $(LIBOBJS)
+	$(CC) -shared -fPIC -o $(SHAREDLIB) $^
+
+$(LIBOBJS): %.o: %.c
+	$(CC) $(CFLAGS) -fPIC -o $@ -c $<
+
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(TARGET) $(OBJS) $(SHAREDLIB)
