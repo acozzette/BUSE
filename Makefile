@@ -4,7 +4,7 @@ OBJS		:= $(TARGET:=.o) $(LIBOBJS)
 SHAREDLIB	:= libbuse.so
 
 CC			:= /usr/bin/gcc
-CFLAGS		:= -g -pedantic -Wall -Wextra -std=c99 -I$(HOME)/local/include -I$(HOME)/src/nbd
+CFLAGS		:= -g -pedantic -Wall -Wextra -std=c99 -I$(HOME)/src/nbd
 LDFLAGS		:= -lbuse -L.
 
 .PHONY: all clean
