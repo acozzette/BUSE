@@ -8,7 +8,7 @@ struct buse_operations {
     int (*write)(const void *buf, u_int32_t len, u_int64_t offset);
     int (*disc)();
     int (*flush)();
-    int (*trim)();
+    int (*trim)(u_int64_t from, u_int32_t len);
 
     u_int64_t size;
 };

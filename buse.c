@@ -124,7 +124,7 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
                 aop->flush();
                 break;
             case NBD_CMD_TRIM:
-                aop->trim();
+                aop->trim(from, len);
                 break;
             default:
                 assert(0);
