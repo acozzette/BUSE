@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <linux/types.h>
 #include <nbd.h>
@@ -100,17 +101,18 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
              * and writes.
              */
             case NBD_CMD_READ:
+                fprintf(stderr, "Request for read of size %d\n", len);
                 chunk = malloc(len + sizeof(struct nbd_reply));
                 aop->read((char *)chunk + sizeof(struct nbd_reply), len, from);
                 memcpy(chunk, &reply, sizeof(struct nbd_reply));
                 bytes_written = write(sk, chunk, len + sizeof(struct nbd_reply));
                 assert(bytes_written == len + sizeof(struct nbd_reply));
-                fprintf(stderr, "Wrote %d bytes.\n", bytes_written);
                 free(chunk);
                 break;
             case NBD_CMD_WRITE:
+                fprintf(stderr, "Request for write of size %d\n", len);
                 chunk = malloc(len);
-                bytes_read = read(sk, &chunk, len);
+                bytes_read = read(sk, chunk, len);
                 assert(bytes_read == len);
                 aop->write(chunk, len, from);
                 free(chunk);

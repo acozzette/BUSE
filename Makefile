@@ -1,26 +1,26 @@
 TARGET		:= busexmp
 LIBOBJS 	:= buse.o
 OBJS		:= $(TARGET:=.o) $(LIBOBJS)
-SHAREDLIB	:= libbuse.so
+STATIC_LIB	:= libbuse.a
 
 CC			:= /usr/bin/gcc
 CFLAGS		:= -g -pedantic -Wall -Wextra -std=c99 -I$(HOME)/src/nbd
-LDFLAGS		:= -lbuse -L.
+LDFLAGS		:= -L. -lbuse
 
 .PHONY: all clean
 all: $(TARGET)
 
-$(TARGET): %: %.o lib
-	$(CC) $(LDFLAGS) -o $@ $<
+$(TARGET): %: %.o $(STATIC_LIB)
+	$(CC) -o $@ $< $(LDFLAGS)
 
 $(TARGET:=.o): %.o: %.c buse.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-lib: $(LIBOBJS)
-	$(CC) -shared -fPIC -o $(SHAREDLIB) $^
+$(STATIC_LIB): $(LIBOBJS)
+	ar rcu $(STATIC_LIB) $(LIBOBJS)
 
 $(LIBOBJS): %.o: %.c
-	$(CC) $(CFLAGS) -fPIC -o $@ -c $<
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	rm -f $(TARGET) $(OBJS) $(SHAREDLIB)
+	rm -f $(TARGET) $(OBJS) $(STATIC_LIB)

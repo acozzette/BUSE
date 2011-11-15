@@ -13,7 +13,7 @@ struct buse_operations {
     u_int64_t size;
 };
 
-int buse_main(int argc, char *argv[], const struct buse_operations *aop,
+int buse_main(int argc, char *argv[], const struct buse_operations *bop,
         void *userdata);
 
 #endif /* BUSE_H_INCLUDED */
