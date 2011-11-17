@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -17,10 +18,17 @@ static int xmp_write(const void *buf, u_int32_t len, u_int64_t offset)
     return 0;
 }
 
+static int xmp_disc()
+{
+    fprintf(stderr, "Received a disconnect request.\n");
+    return 0;
+}
+
 static struct buse_operations aop = {
     .read = xmp_read,
     .write = xmp_write,
-    .size = 128 * 1024,
+    .disc = xmp_disc,
+    .size = 128 * 1024 * 1024,
 };
 
 int main(int argc, char *argv[])
