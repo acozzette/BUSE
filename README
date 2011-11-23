@@ -19,3 +19,19 @@ which allows a remote machine to serve requests for reads and writes to a
 virtual block device on the local machine. BUSE sets up an NBD server and client
 on the same machine, with the server executing the code defined by the BUSE
 user.
+
+Running the Example Code
+
+BUSE comes with an example driver in busexmp.c that implements a 128 MB memory
+disk. To try out the example code, run "make" and then execute the following as
+root:
+
+modprobe nbd
+./busexmp -n /dev/nbd0
+
+You should then have an in-memory disk running, represented by the device file
+/dev/nbd0. You can create a file system on the virtual disk, mount it, and start
+reading and writing files on it:
+
+mkfs.ext4 /dev/nbd0
+mount /dev/nbd0 /mnt
