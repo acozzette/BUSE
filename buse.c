@@ -2,7 +2,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/types.h>
-#include <nbd.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
