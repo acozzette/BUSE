@@ -1,4 +1,4 @@
-TARGET		:= busexmp
+TARGET		:= busexmp loopback
 LIBOBJS 	:= buse.o
 OBJS		:= $(TARGET:=.o) $(LIBOBJS)
 STATIC_LIB	:= libbuse.a

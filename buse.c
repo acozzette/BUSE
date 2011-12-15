@@ -132,7 +132,7 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
              * and writes.
              */
             case NBD_CMD_READ:
-                fprintf(stderr, "Request for read of size %d\n", len);
+                /* fprintf(stderr, "Request for read of size %d\n", len); */
                 chunk = malloc(len + sizeof(struct nbd_reply));
                 aop->read((char *)chunk + sizeof(struct nbd_reply), len, from);
                 memcpy(chunk, &reply, sizeof(struct nbd_reply));
@@ -140,7 +140,7 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
                 free(chunk);
                 break;
             case NBD_CMD_WRITE:
-                fprintf(stderr, "Request for write of size %d\n", len);
+                /* fprintf(stderr, "Request for write of size %d\n", len); */
                 chunk = malloc(len);
                 read_all(sk, chunk, len);
                 aop->write(chunk, len, from);
