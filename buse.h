@@ -26,6 +26,12 @@ enum {
 	NBD_CMD_TRIM = 4
 };
 
+/* values for flags field */
+#define NBD_FLAG_HAS_FLAGS	(1 << 0)
+#define NBD_FLAG_READ_ONLY	(1 << 1)
+/* there is a gap here to match userspace */
+#define NBD_FLAG_SEND_TRIM	(1 << 5) /* send trim/discard */
+
 /* Magic numbers */
 #define NBD_REQUEST_MAGIC 0x25609513
 #define NBD_REPLY_MAGIC 0x67446698
