@@ -61,7 +61,7 @@ struct nbd_reply {
 struct buse_operations {
     int (*read)(void *buf, u_int32_t len, u_int64_t offset);
     int (*write)(const void *buf, u_int32_t len, u_int64_t offset);
-    int (*disc)();
+    void (*disc)();
     int (*flush)();
     int (*trim)(u_int64_t from, u_int32_t len);
 

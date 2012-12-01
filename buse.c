@@ -31,14 +31,14 @@ u_int64_t ntohll(u_int64_t a) {
 #endif
 #define htonll ntohll
 
-static int read_all(int fd, void *buf, size_t count)
+static int read_all(int fd, char* buf, size_t count)
 {
   int bytes_read;
 
   while (count > 0) {
     bytes_read = read(fd, buf, count);
     assert(bytes_read > 0);
-    buf = (char *)buf + bytes_read;
+    buf += bytes_read;
     count -= bytes_read;
   }
   assert(count == 0);
@@ -46,14 +46,14 @@ static int read_all(int fd, void *buf, size_t count)
   return 0;
 }
 
-static int write_all(int fd, const void *buf, size_t count)
+static int write_all(int fd, char* buf, size_t count)
 {
   int bytes_written;
 
   while (count > 0) {
     bytes_written = write(fd, buf, count);
     assert(bytes_written > 0);
-    buf = (char *)buf + bytes_written;
+    buf += bytes_written;
     count -= bytes_written;
   }
   assert(count == 0);
@@ -71,7 +71,7 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
   char *dev_file;
   struct nbd_request request;
   struct nbd_reply reply;
-  void *chunk;
+  char *chunk;
 
   (void) userdata;
 
@@ -104,8 +104,8 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
 	fprintf(stderr, "%s\n", strerror(errno));
     }
 
-    assert(ioctl(nbd, NBD_CLEAR_QUE) != -1);
-    assert(ioctl(nbd, NBD_CLEAR_SOCK) != -1);
+    ioctl(nbd, NBD_CLEAR_QUE);
+    ioctl(nbd, NBD_CLEAR_SOCK);
 
     exit(0);
   }
@@ -141,29 +141,31 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
     case NBD_CMD_READ:
       /* fprintf(stderr, "Request for read of size %d\n", len); */
       chunk = malloc(len + sizeof(struct nbd_reply));
-      aop->read((char *)chunk + sizeof(struct nbd_reply), len, from);
-      memcpy(chunk, &reply, sizeof(struct nbd_reply));
-      write_all(sk, chunk, len + sizeof(struct nbd_reply));
+      reply.error = aop->read((char *)chunk + sizeof(struct nbd_reply), len, from);
+      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
+      if(reply.error == 0)
+	write_all(sk, (char*)chunk, len);
       free(chunk);
       break;
     case NBD_CMD_WRITE:
       /* fprintf(stderr, "Request for write of size %d\n", len); */
       chunk = malloc(len);
       read_all(sk, chunk, len);
-      aop->write(chunk, len, from);
+      reply.error = aop->write(chunk, len, from);
       free(chunk);
-      write_all(sk, &reply, sizeof(struct nbd_reply));
+      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
     case NBD_CMD_DISC:
       /* Handle a disconnect request. */
       aop->disc();
       return 0;
     case NBD_CMD_FLUSH:
-      aop->flush();
+      reply.error = aop->flush();
+      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
     case NBD_CMD_TRIM:
-      aop->trim(from, len);
-      write_all(sk, &reply, sizeof(struct nbd_reply));
+      reply.error = aop->trim(from, len);
+      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
     default:
       assert(0);
