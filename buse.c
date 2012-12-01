@@ -163,6 +163,7 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
       break;
     case NBD_CMD_TRIM:
       aop->trim(from, len);
+      write_all(sk, &reply, sizeof(struct nbd_reply));
       break;
     default:
       assert(0);
