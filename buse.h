@@ -26,6 +26,14 @@ enum {
 	NBD_CMD_TRIM = 4
 };
 
+/* values for flags field */
+#define NBD_FLAG_HAS_FLAGS	(1 << 0)	/* Flags are there */
+#define NBD_FLAG_READ_ONLY	(1 << 1)	/* Device is read-only */
+#define NBD_FLAG_SEND_FLUSH	(1 << 2)	/* Send FLUSH */
+#define NBD_FLAG_SEND_FUA	(1 << 3)	/* Send FUA (Force Unit Access) */
+#define NBD_FLAG_ROTATIONAL	(1 << 4)	/* Use elevator algorithm - rotational media */
+#define NBD_FLAG_SEND_TRIM    (1 << 5) /* send trim/discard */
+
 /* Magic numbers */
 #define NBD_REQUEST_MAGIC 0x25609513
 #define NBD_REPLY_MAGIC 0x67446698

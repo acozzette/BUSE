@@ -74,8 +74,8 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
 
     (void) userdata;
 
-    assert(argc == 3);
-    dev_file = argv[2];
+    assert(argc == 2);
+    dev_file = argv[1];
 
     assert(!socketpair(AF_UNIX, SOCK_STREAM, 0, sp));
 
@@ -91,6 +91,7 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
         sk = sp[1];
 
         assert(ioctl(nbd, NBD_SET_SOCK, sk) != -1);
+	assert(ioctl(nbd, NBD_SET_FLAGS, NBD_FLAG_SEND_TRIM) != -1);
         err = ioctl(nbd, NBD_DO_IT);
         fprintf(stderr, "nbd device terminated with code %d\n", err);
         if (err == -1)
