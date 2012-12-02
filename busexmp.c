@@ -20,9 +20,20 @@ static int xmp_write(const void *buf, u_int32_t len, u_int64_t offset)
   return 0;
 }
 
-static int xmp_disc()
+static void xmp_disc()
 {
   fprintf(stderr, "Received a disconnect request.\n");
+}
+
+static int xmp_flush()
+{
+  fprintf(stderr, "Received a flush request.\n");
+  return 0;
+}
+
+static int xmp_trim(u_int64_t from, u_int32_t len)
+{
+  fprintf(stderr, "T %lu %u\n", from, len);
   return 0;
 }
 
@@ -41,8 +52,8 @@ static struct buse_operations aop = {
   .read = xmp_read,
   .write = xmp_write,
   .disc = xmp_disc,
-  .trim = xmp_trim,
   .flush = xmp_flush,
+  .trim = xmp_trim,
   .size = 128 * 1024 * 1024,
 };
 
