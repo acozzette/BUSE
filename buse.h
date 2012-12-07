@@ -1,8 +1,11 @@
 #ifndef BUSE_H_INCLUDED
 #define BUSE_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+  
 /* Most of this file was copied from nbd.h in the nbd distribution. */
-
 #include <linux/types.h>
 #include <sys/types.h>
 
@@ -72,5 +75,9 @@ struct buse_operations {
 
 int buse_main(int argc, char *argv[], const struct buse_operations *bop,
         void *userdata);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BUSE_H_INCLUDED */

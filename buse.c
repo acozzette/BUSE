@@ -66,7 +66,8 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
   int sp[2];
   int nbd, sk, err, tmp_fd;
   u_int64_t from;
-  u_int32_t len, bytes_read;
+  u_int32_t len;
+  ssize_t bytes_read;
   char *dev_file;
   struct nbd_request request;
   struct nbd_reply reply;

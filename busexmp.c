@@ -31,17 +31,6 @@ static int xmp_flush()
   return 0;
 }
 
-static int xmp_trim(u_int64_t from, u_int32_t len)
-{
-  fprintf(stderr, "T %lu %u\n", from, len);
-  return 0;
-}
-
-static int xmp_flush(){
-  fprintf(stderr, "F\n");
-  return 0;
-}
-
 static int xmp_trim(u_int64_t from, u_int32_t len){
   fprintf(stderr, "T - %lu, %u\n", from, len);
   return 0;
