@@ -18,7 +18,7 @@ static void usage(void)
     fprintf(stderr, "Usage: loopback <phyical device> <virtual device>\n");
 }
 
-static int loopback_read(void *buf, u_int32_t len, u_int64_t offset)
+static int loopback_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     int bytes_read;
 
@@ -33,7 +33,7 @@ static int loopback_read(void *buf, u_int32_t len, u_int64_t offset)
     return 0;
 }
 
-static int loopback_write(const void *buf, u_int32_t len, u_int64_t offset)
+static int loopback_write(const void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     int bytes_written;
 
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "The size of this device is %ld bytes.\n", size);
     bop.size = size;
 
-    buse_main(argc, argv, &bop, NULL);
+    buse_main(argv[1], &bop, NULL);
 
     return 0;
 }

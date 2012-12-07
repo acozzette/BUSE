@@ -61,22 +61,16 @@ static int write_all(int fd, char* buf, size_t count)
   return 0;
 }
 
-int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *userdata)
+int buse_main(const char* dev_file, const struct buse_operations *aop, void *userdata)
 {
   int sp[2];
   int nbd, sk, err, tmp_fd;
   u_int64_t from;
   u_int32_t len;
   ssize_t bytes_read;
-  char *dev_file;
   struct nbd_request request;
   struct nbd_reply reply;
   void *chunk;
-
-  (void) userdata;
-
-  assert(argc == 2);
-  dev_file = argv[1];
 
   assert(!socketpair(AF_UNIX, SOCK_STREAM, 0, sp));
 
@@ -139,32 +133,32 @@ int buse_main(int argc, char *argv[], const struct buse_operations *aop, void *u
        * and writes.
        */
     case NBD_CMD_READ:
-      /* fprintf(stderr, "Request for read of size %d\n", len); */
-      chunk = malloc(len + sizeof(struct nbd_reply));
-      reply.error = aop->read((char *)chunk + sizeof(struct nbd_reply), len, from);
+      fprintf(stderr, "Request for read of size %d\n", len);
+      chunk = malloc(len);
+      reply.error = aop->read(chunk, len, from, userdata);
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       if(reply.error == 0)
 	write_all(sk, (char*)chunk, len);
       free(chunk);
       break;
     case NBD_CMD_WRITE:
-      /* fprintf(stderr, "Request for write of size %d\n", len); */
+      fprintf(stderr, "Request for write of size %d\n", len);
       chunk = malloc(len);
       read_all(sk, chunk, len);
-      reply.error = aop->write(chunk, len, from);
+      reply.error = aop->write(chunk, len, from, userdata);
       free(chunk);
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
     case NBD_CMD_DISC:
       /* Handle a disconnect request. */
-      aop->disc();
+      aop->disc(userdata);
       return 0;
     case NBD_CMD_FLUSH:
-      reply.error = aop->flush();
+      reply.error = aop->flush(userdata);
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
     case NBD_CMD_TRIM:
-      reply.error = aop->trim(from, len);
+      reply.error = aop->trim(from, len, userdata);
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
     default:
