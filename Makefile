@@ -3,7 +3,7 @@ LIBOBJS 	:= buse.o
 OBJS		:= $(TARGET:=.o) $(LIBOBJS)
 STATIC_LIB	:= libbuse.a
 
-CC			:= /usr/bin/gcc
+CC		:= /usr/bin/gcc
 CFLAGS		:= -g -pedantic -Wall -Wextra -std=c99
 LDFLAGS		:= -L. -lbuse
 
