@@ -21,6 +21,7 @@ static void usage(void)
 static int loopback_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     int bytes_read;
+    (void)(userdata);
 
     lseek64(fd, offset, SEEK_SET);
     while (len > 0) {
@@ -36,6 +37,7 @@ static int loopback_read(void *buf, u_int32_t len, u_int64_t offset, void *userd
 static int loopback_write(const void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     int bytes_written;
+    (void)(userdata);
 
     lseek64(fd, offset, SEEK_SET);
     while (len > 0) {
@@ -78,7 +80,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "The size of this device is %ld bytes.\n", size);
     bop.size = size;
 
-    buse_main(argv[1], &bop, NULL);
+    buse_main(argv[2], &bop, NULL);
 
     return 0;
 }
