@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "The size of this device is %ld bytes.\n", size);
     bop.size = size;
 
-    buse_main(argv[1], &bop, NULL);
+    buse_main(argv[2], &bop, NULL);
 
     return 0;
 }
