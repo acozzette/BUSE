@@ -21,6 +21,7 @@ static void usage(void)
 static int loopback_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     int bytes_read;
+    (void)(userdata);
 
     lseek64(fd, offset, SEEK_SET);
     while (len > 0) {
@@ -36,6 +37,7 @@ static int loopback_read(void *buf, u_int32_t len, u_int64_t offset, void *userd
 static int loopback_write(const void *buf, u_int32_t len, u_int64_t offset, void *userdata)
 {
     int bytes_written;
+    (void)(userdata);
 
     lseek64(fd, offset, SEEK_SET);
     while (len > 0) {
