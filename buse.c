@@ -107,9 +107,11 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
     if(ioctl(nbd, NBD_SET_SOCK, sk) == -1){
       fprintf(stderr, "ioctl(nbd, NBD_SET_SOCK, sk) failed.[%s]\n", strerror(errno));
     }
+#if defined NBD_SET_FLAGS && defined NBD_FLAG_SEND_TRIM
     else if(ioctl(nbd, NBD_SET_FLAGS, NBD_FLAG_SEND_TRIM) == -1){
       fprintf(stderr, "ioctl(nbd, NBD_SET_FLAGS, NBD_FLAG_SEND_TRIM) failed.[%s]\n", strerror(errno));
     }
+#endif
     else{
       err = ioctl(nbd, NBD_DO_IT);
       fprintf(stderr, "nbd device terminated with code %d\n", err);
@@ -153,6 +155,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
        */
     case NBD_CMD_READ:
       fprintf(stderr, "Request for read of size %d\n", len);
+      assert(aop->read);
       chunk = malloc(len);
       reply.error = aop->read(chunk, len, from, userdata);
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
@@ -162,6 +165,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       break;
     case NBD_CMD_WRITE:
       fprintf(stderr, "Request for write of size %d\n", len);
+      assert(aop->write);
       chunk = malloc(len);
       read_all(sk, chunk, len);
       reply.error = aop->write(chunk, len, from, userdata);
@@ -170,16 +174,23 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       break;
     case NBD_CMD_DISC:
       /* Handle a disconnect request. */
+      assert(aop->disc);
       aop->disc(userdata);
       return 0;
+#if defined NBD_CMD_FLUSH
     case NBD_CMD_FLUSH:
+      assert(aop->flush);
       reply.error = aop->flush(userdata);
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
+#endif
+#if defined NBD_CMD_TRIM
     case NBD_CMD_TRIM:
+      assert(aop->trim);
       reply.error = aop->trim(from, len, userdata);
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
+#endif
     default:
       assert(0);
     }
