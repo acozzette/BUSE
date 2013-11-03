@@ -177,14 +177,14 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       assert(aop->disc);
       aop->disc(userdata);
       return 0;
-#if defined NBD_CMD_FLUSH
+#ifdef NBD_FLAG_SEND_FLUSH
     case NBD_CMD_FLUSH:
       assert(aop->flush);
       reply.error = aop->flush(userdata);
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
 #endif
-#if defined NBD_CMD_TRIM
+#ifdef NBD_FLAG_SEND_TRIM
     case NBD_CMD_TRIM:
       assert(aop->trim);
       reply.error = aop->trim(from, len, userdata);
