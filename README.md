@@ -25,7 +25,7 @@ memory disk. To try out the example code, run `make` and then execute the
 following as root:
 
     modprobe nbd
-    ./busexmp -n /dev/nbd0
+    ./busexmp /dev/nbd0
 
 You should then have an in-memory disk running, represented by the device file
 `/dev/nbd0`. You can create a file system on the virtual disk, mount it, and
