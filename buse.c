@@ -91,13 +91,16 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
   struct nbd_reply reply;
   void *chunk;
 
-  assert(!socketpair(AF_UNIX, SOCK_STREAM, 0, sp));
+  err = socketpair(AF_UNIX, SOCK_STREAM, 0, sp);
+  assert(!err);
 
   nbd = open(dev_file, O_RDWR);
   assert(nbd != -1);
 
-  assert(ioctl(nbd, NBD_SET_SIZE, aop->size) != -1);
-  assert(ioctl(nbd, NBD_CLEAR_SOCK) != -1);
+  err = ioctl(nbd, NBD_SET_SIZE, aop->size);
+  assert(err != -1);
+  err = ioctl(nbd, NBD_CLEAR_SOCK);
+  assert(err != -1);
 
   if (!fork()) {
     /* The child needs to continue setting things up. */
