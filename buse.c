@@ -94,7 +94,13 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
   assert(!socketpair(AF_UNIX, SOCK_STREAM, 0, sp));
 
   nbd = open(dev_file, O_RDWR);
-  assert(nbd != -1);
+  if (nbd == -1) {
+    fprintf(stderr, 
+        "Failed to open `%s': %s\n"
+        "Is kernel module `nbd' is loaded and you have permissions "
+        "to access the device?\n", dev_file, strerror(errno));
+    return 1;
+  }
 
   assert(ioctl(nbd, NBD_SET_SIZE, aop->size) != -1);
   assert(ioctl(nbd, NBD_CLEAR_SOCK) != -1);
