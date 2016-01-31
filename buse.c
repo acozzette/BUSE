@@ -142,6 +142,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
   while ((bytes_read = read(sk, &request, sizeof(request))) > 0) {
     assert(bytes_read == sizeof(request));
     memcpy(reply.handle, request.handle, sizeof(reply.handle));
+    reply.error = htonl(0);
 
     len = ntohl(request.len);
     from = ntohll(request.from);
@@ -155,39 +156,51 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
        */
     case NBD_CMD_READ:
       fprintf(stderr, "Request for read of size %d\n", len);
-      assert(aop->read);
+      /* Fill with zero in case actual read is not implemented */
       chunk = malloc(len);
-      reply.error = aop->read(chunk, len, from, userdata);
+      if (aop->read) {
+        reply.error = aop->read(chunk, len, from, userdata);
+      } else {
+        /* If user not specified read operation, return EPERM error */
+        reply.error = htonl(EPERM);
+      }
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
-      if(reply.error == 0)
-	write_all(sk, (char*)chunk, len);
+      write_all(sk, (char*)chunk, len);
+
       free(chunk);
       break;
     case NBD_CMD_WRITE:
       fprintf(stderr, "Request for write of size %d\n", len);
-      assert(aop->write);
       chunk = malloc(len);
       read_all(sk, chunk, len);
-      reply.error = aop->write(chunk, len, from, userdata);
+      if (aop->write) {
+        reply.error = aop->write(chunk, len, from, userdata);
+      } else {
+        /* If user not specified write operation, return EPERM error */
+        reply.error = htonl(EPERM);
+      }
       free(chunk);
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
     case NBD_CMD_DISC:
       /* Handle a disconnect request. */
-      assert(aop->disc);
-      aop->disc(userdata);
+      if (aop->disc) {
+        aop->disc(userdata);
+      }
       return 0;
 #ifdef NBD_FLAG_SEND_FLUSH
     case NBD_CMD_FLUSH:
-      assert(aop->flush);
-      reply.error = aop->flush(userdata);
+      if (aop->flush) {
+        reply.error = aop->flush(userdata);
+      }
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
 #endif
 #ifdef NBD_FLAG_SEND_TRIM
     case NBD_CMD_TRIM:
-      assert(aop->trim);
-      reply.error = aop->trim(from, len, userdata);
+      if (aop->trim) {
+        reply.error = aop->trim(from, len, userdata);
+      }
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
 #endif
