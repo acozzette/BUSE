@@ -96,6 +96,7 @@ int main(int argc, char *argv[])
     /* Figure out the size of the underlying block device. */
     err = ioctl(fd, BLKGETSIZE64, &size);
     assert(err != -1);
+    (void)err;
     fprintf(stderr, "The size of this device is %ld bytes.\n", size);
     bop.size = size;
 
