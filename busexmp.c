@@ -74,7 +74,16 @@ static struct buse_operations aop = {
 
 int main(int argc, char *argv[])
 {
-  (void)(argc);
+  if (argc != 2)
+  {
+    fprintf(stderr, 
+        "Usage:\n"
+        "  %s /dev/nbd0\n"
+        "Don't forget to load nbd kernel module (`modprobe nbd`) and\n"
+        "run example from root.\n", argv[0]);
+    return 1;
+  }
+
   data = malloc(aop.size);
 
   return buse_main(argv[1], &aop, (void *)&xmpl_debug);
