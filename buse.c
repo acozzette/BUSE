@@ -103,8 +103,19 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
     return 1;
   }
 
-  err = ioctl(nbd, NBD_SET_SIZE, aop->size);
-  assert(err != -1);
+  if (aop->blksize) {
+    err = ioctl(nbd, NBD_SET_BLKSIZE, aop->blksize);
+    assert(err != -1);
+  }
+  if (aop->size) {
+    err = ioctl(nbd, NBD_SET_SIZE, aop->size);
+    assert(err != -1);
+  }
+  if (aop->size_blocks) {
+    err = ioctl(nbd, NBD_SET_SIZE_BLOCKS, aop->size_blocks);
+    assert(err != -1);
+  }
+
   err = ioctl(nbd, NBD_CLEAR_SOCK);
   assert(err != -1);
 

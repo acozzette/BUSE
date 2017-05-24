@@ -17,7 +17,10 @@ extern "C" {
     int (*flush)(void *userdata);
     int (*trim)(u_int64_t from, u_int32_t len, void *userdata);
 
+    // either set size, OR set both blksize and size_blocks
     u_int64_t size;
+    u_int32_t blksize;
+    u_int64_t size_blocks;
   };
 
   int buse_main(const char* dev_file, const struct buse_operations *bop, void *userdata);
