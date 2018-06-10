@@ -33,3 +33,13 @@ start reading and writing files on it:
 
     mkfs.ext4 /dev/nbd0
     mount /dev/nbd0 /mnt
+
+## Tests
+
+To perform checks you can run scripts in `test/` directory. They require:
+ * superuser previlages,
+ * nbd kernel module loaded,
+ * BUSE and nbd (`nbd-client`) binaries in PATH.
+
+`make test` will run all test scripts with BUSE added to PATH and using
+sudo to grant permissions.
