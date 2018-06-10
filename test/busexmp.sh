@@ -7,16 +7,17 @@ DD="dd status=none"
 
 # verify if blockdev is not currently in use
 set +e
-nbd-client -c "$BLOCKDEV"
+nbd-client -c "$BLOCKDEV" > /dev/null
 if [ $? -ne 1 ]; then
 	echo "device $BLOCKDEV is not ready to use (already in use or corrupted)"
+	exit 1
 fi
 set -e
 
 # on exit do cleanup actions
 function cleanup () {
 	# kill and wait for BUSE background job
-	nbd-client -d "$BLOCKDEV"  # this should be `kill $BUSEPID` but currently it seems unsupported
+	nbd-client -d "$BLOCKDEV" > /dev/null
 	wait $BUSEPID
 	# remove the test file
 	rm -f "$TESTFILE"
