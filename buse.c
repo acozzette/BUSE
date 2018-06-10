@@ -126,6 +126,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
 
     if(ioctl(nbd, NBD_SET_SOCK, sk) == -1){
       fprintf(stderr, "ioctl(nbd, NBD_SET_SOCK, sk) failed.[%s]\n", strerror(errno));
+      return EXIT_FAILURE;
     }
 #if defined NBD_SET_FLAGS && defined NBD_FLAG_SEND_TRIM
     else if(ioctl(nbd, NBD_SET_FLAGS, NBD_FLAG_SEND_TRIM) == -1){
@@ -135,12 +136,19 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
     else{
       err = ioctl(nbd, NBD_DO_IT);
       fprintf(stderr, "nbd device terminated with code %d\n", err);
-      if (err == -1)
-	fprintf(stderr, "%s\n", strerror(errno));
+      if (err == -1) {
+        fprintf(stderr, "%s\n", strerror(errno));
+        return EXIT_FAILURE;
+      }
     }
 
-    ioctl(nbd, NBD_CLEAR_QUE);
-    ioctl(nbd, NBD_CLEAR_SOCK);
+    if (
+      ioctl(nbd, NBD_CLEAR_QUE) == -1 ||
+      ioctl(nbd, NBD_CLEAR_SOCK) == -1
+    ) {
+      fprintf(stderr, "failed to perform nbd cleanup actions: %s\n", strerror(errno));
+      return EXIT_FAILURE;
+    }
 
     exit(0);
   }
@@ -228,7 +236,9 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       assert(0);
     }
   }
-  if (bytes_read == -1)
+  if (bytes_read == -1) {
     fprintf(stderr, "%s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
   return 0;
 }
