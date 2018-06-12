@@ -108,16 +108,98 @@ static int set_sigaction(int sig, const struct sigaction * act) {
   return r;
 }
 
-int buse_main(const char* dev_file, const struct buse_operations *aop, void *userdata)
-{
-  int sp[2];
-  int nbd, sk, err, tmp_fd;
+/* Serve userland side of nbd socket. If everything worked ok, return 0. */
+static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata) {
   u_int64_t from;
   u_int32_t len;
   ssize_t bytes_read;
   struct nbd_request request;
   struct nbd_reply reply;
   void *chunk;
+
+  reply.magic = htonl(NBD_REPLY_MAGIC);
+  reply.error = htonl(0);
+
+  while ((bytes_read = read(sk, &request, sizeof(request))) > 0) {
+    assert(bytes_read == sizeof(request));
+    memcpy(reply.handle, request.handle, sizeof(reply.handle));
+    reply.error = htonl(0);
+
+    len = ntohl(request.len);
+    from = ntohll(request.from);
+    assert(request.magic == htonl(NBD_REQUEST_MAGIC));
+
+    switch(ntohl(request.type)) {
+      /* I may at some point need to deal with the the fact that the
+       * official nbd server has a maximum buffer size, and divides up
+       * oversized requests into multiple pieces. This applies to reads
+       * and writes.
+       */
+    case NBD_CMD_READ:
+      fprintf(stderr, "Request for read of size %d\n", len);
+      /* Fill with zero in case actual read is not implemented */
+      chunk = malloc(len);
+      if (aop->read) {
+        reply.error = aop->read(chunk, len, from, userdata);
+      } else {
+        /* If user not specified read operation, return EPERM error */
+        reply.error = htonl(EPERM);
+      }
+      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
+      write_all(sk, (char*)chunk, len);
+
+      free(chunk);
+      break;
+    case NBD_CMD_WRITE:
+      fprintf(stderr, "Request for write of size %d\n", len);
+      chunk = malloc(len);
+      read_all(sk, chunk, len);
+      if (aop->write) {
+        reply.error = aop->write(chunk, len, from, userdata);
+      } else {
+        /* If user not specified write operation, return EPERM error */
+        reply.error = htonl(EPERM);
+      }
+      free(chunk);
+      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
+      break;
+    case NBD_CMD_DISC:
+      /* Handle a disconnect request. */
+      if (aop->disc) {
+        aop->disc(userdata);
+      }
+      return EXIT_SUCCESS;
+#ifdef NBD_FLAG_SEND_FLUSH
+    case NBD_CMD_FLUSH:
+      if (aop->flush) {
+        reply.error = aop->flush(userdata);
+      }
+      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
+      break;
+#endif
+#ifdef NBD_FLAG_SEND_TRIM
+    case NBD_CMD_TRIM:
+      if (aop->trim) {
+        reply.error = aop->trim(from, len, userdata);
+      }
+      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
+      break;
+#endif
+    default:
+      assert(0);
+    }
+  }
+  if (bytes_read == -1) {
+    fprintf(stderr, "%s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
+}
+
+int buse_main(const char* dev_file, const struct buse_operations *aop, void *userdata)
+{
+  int sp[2];
+  int nbd, sk, err, tmp_fd;
 
   err = socketpair(AF_UNIX, SOCK_STREAM, 0, sp);
   assert(!err);
@@ -223,83 +305,6 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
   close(tmp_fd);
 
   close(sp[1]);
-  sk = sp[0];
 
-  reply.magic = htonl(NBD_REPLY_MAGIC);
-  reply.error = htonl(0);
-
-  while ((bytes_read = read(sk, &request, sizeof(request))) > 0) {
-    assert(bytes_read == sizeof(request));
-    memcpy(reply.handle, request.handle, sizeof(reply.handle));
-    reply.error = htonl(0);
-
-    len = ntohl(request.len);
-    from = ntohll(request.from);
-    assert(request.magic == htonl(NBD_REQUEST_MAGIC));
-
-    switch(ntohl(request.type)) {
-      /* I may at some point need to deal with the the fact that the
-       * official nbd server has a maximum buffer size, and divides up
-       * oversized requests into multiple pieces. This applies to reads
-       * and writes.
-       */
-    case NBD_CMD_READ:
-      fprintf(stderr, "Request for read of size %d\n", len);
-      /* Fill with zero in case actual read is not implemented */
-      chunk = malloc(len);
-      if (aop->read) {
-        reply.error = aop->read(chunk, len, from, userdata);
-      } else {
-        /* If user not specified read operation, return EPERM error */
-        reply.error = htonl(EPERM);
-      }
-      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
-      write_all(sk, (char*)chunk, len);
-
-      free(chunk);
-      break;
-    case NBD_CMD_WRITE:
-      fprintf(stderr, "Request for write of size %d\n", len);
-      chunk = malloc(len);
-      read_all(sk, chunk, len);
-      if (aop->write) {
-        reply.error = aop->write(chunk, len, from, userdata);
-      } else {
-        /* If user not specified write operation, return EPERM error */
-        reply.error = htonl(EPERM);
-      }
-      free(chunk);
-      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
-      break;
-    case NBD_CMD_DISC:
-      /* Handle a disconnect request. */
-      if (aop->disc) {
-        aop->disc(userdata);
-      }
-      return 0;
-#ifdef NBD_FLAG_SEND_FLUSH
-    case NBD_CMD_FLUSH:
-      if (aop->flush) {
-        reply.error = aop->flush(userdata);
-      }
-      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
-      break;
-#endif
-#ifdef NBD_FLAG_SEND_TRIM
-    case NBD_CMD_TRIM:
-      if (aop->trim) {
-        reply.error = aop->trim(from, len, userdata);
-      }
-      write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
-      break;
-#endif
-    default:
-      assert(0);
-    }
-  }
-  if (bytes_read == -1) {
-    fprintf(stderr, "%s\n", strerror(errno));
-    return EXIT_FAILURE;
-  }
-  return 0;
+  return serve_nbd(sp[0], aop, userdata);
 }
