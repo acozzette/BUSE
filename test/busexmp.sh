@@ -30,6 +30,7 @@ $DD if=/dev/urandom of="$TESTFILE" bs=16M count=1
 
 # attach BUSE device
 busexmp "$BLOCKDEV" &
+sleep 1
 BUSEPID=$!
 
 ### do checks ###
