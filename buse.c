@@ -17,11 +17,15 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#define _POSIX_C_SOURCE (200809L)
+
 #include <assert.h>
 #include <errno.h>
+#include <err.h>
 #include <fcntl.h>
 #include <linux/types.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,6 +84,30 @@ static int write_all(int fd, char* buf, size_t count)
   return 0;
 }
 
+/* Signal handler to gracefully disconnect from nbd kernel driver. */
+static int nbd_dev_to_disconnect = -1;
+static void disconnect_nbd(int signal) {
+  (void)signal;
+  if (nbd_dev_to_disconnect != -1) {
+    if(ioctl(nbd_dev_to_disconnect, NBD_DISCONNECT) == -1) {
+      warn("failed to request disconect on nbd device");
+    } else {
+      nbd_dev_to_disconnect = -1;
+      fprintf(stderr, "sucessfuly requested disconnect on nbd device\n");
+    }
+  }
+}
+
+/* Sets signal action like regular sigaction but is suspicious. */
+static int set_sigaction(int sig, const struct sigaction * act) {
+  struct sigaction oact;
+  int r = sigaction(sig, act, &oact);
+  if (r == 0 && oact.sa_handler != SIG_DFL) {
+    warnx("overriden non-default signal handler (%d: %s)", sig, strsignal(sig));
+  }
+  return r;
+}
+
 int buse_main(const char* dev_file, const struct buse_operations *aop, void *userdata)
 {
   int sp[2];
@@ -120,6 +148,17 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
   assert(err != -1);
 
   if (!fork()) {
+    /* Block all signals to not get interrupted in ioctl(NBD_DO_IT), as
+     * it seems there is no good way to handle such interruption.*/
+    sigset_t sigset;
+    if (
+      sigfillset(&sigset) != 0 ||
+      sigprocmask(SIG_SETMASK, &sigset, NULL) != 0
+    ) {
+      warn("failed to block signals in child");
+      return EXIT_FAILURE;
+    }
+
     /* The child needs to continue setting things up. */
     close(sp[0]);
     sk = sp[1];
@@ -143,6 +182,28 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
     ioctl(nbd, NBD_CLEAR_SOCK);
 
     exit(0);
+  }
+
+  /* Parent handles termination signals by terminating nbd device. */
+  assert(nbd_dev_to_disconnect == -1);
+  nbd_dev_to_disconnect = nbd;
+  struct sigaction act;
+  act.sa_handler = disconnect_nbd;
+  act.sa_flags = SA_RESTART;
+  if (
+    sigemptyset(&act.sa_mask) != 0 ||
+    sigaddset(&act.sa_mask, SIGINT) != 0 ||
+    sigaddset(&act.sa_mask, SIGTERM) != 0
+  ) {
+    warn("failed to prepare signal mask in parent");
+    return EXIT_FAILURE;
+  }
+  if (
+    set_sigaction(SIGINT, &act) != 0 ||
+    set_sigaction(SIGTERM, &act) != 0
+  ) {
+    warn("failed to register signal handlers in parent");
+    return EXIT_FAILURE;
   }
 
   /* The parent opens the device file at least once, to make sure the
