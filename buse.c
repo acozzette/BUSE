@@ -238,7 +238,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       sigprocmask(SIG_SETMASK, &sigset, NULL) != 0
     ) {
       warn("failed to block signals in child");
-      return EXIT_FAILURE;
+      exit(EXIT_FAILURE);
     }
 
     /* The child needs to continue setting things up. */
@@ -247,7 +247,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
 
     if(ioctl(nbd, NBD_SET_SOCK, sk) == -1){
       fprintf(stderr, "ioctl(nbd, NBD_SET_SOCK, sk) failed.[%s]\n", strerror(errno));
-      return EXIT_FAILURE;
+      exit(EXIT_FAILURE);
     }
 #if defined NBD_SET_FLAGS && defined NBD_FLAG_SEND_TRIM
     else if(ioctl(nbd, NBD_SET_FLAGS, NBD_FLAG_SEND_TRIM) == -1){
@@ -259,7 +259,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       fprintf(stderr, "nbd device terminated with code %d\n", err);
       if (err == -1) {
         fprintf(stderr, "%s\n", strerror(errno));
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
       }
     }
 
@@ -268,7 +268,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       ioctl(nbd, NBD_CLEAR_SOCK) == -1
     ) {
       fprintf(stderr, "failed to perform nbd cleanup actions: %s\n", strerror(errno));
-      return EXIT_FAILURE;
+      exit(EXIT_FAILURE);
     }
 
     exit(0);
