@@ -32,6 +32,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "buse.h"
@@ -229,7 +230,8 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
   err = ioctl(nbd, NBD_CLEAR_SOCK);
   assert(err != -1);
 
-  if (!fork()) {
+  pid_t pid = fork();
+  if (pid == 0) {
     /* Block all signals to not get interrupted in ioctl(NBD_DO_IT), as
      * it seems there is no good way to handle such interruption.*/
     sigset_t sigset;
@@ -306,5 +308,20 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
 
   close(sp[1]);
 
-  return serve_nbd(sp[0], aop, userdata);
+  /* serve NBD socket */
+  int status;
+  status = serve_nbd(sp[0], aop, userdata);
+  if (close(sp[0]) != 0) warn("problem closing server side nbd socket");
+  if (status != 0) return status;
+
+  /* wait for subprocess */
+  if (waitpid(pid, &status, 0) == -1) {
+    warn("waitpid failed");
+    return EXIT_FAILURE;
+  }
+  if (WEXITSTATUS(status) != 0) {
+    return WEXITSTATUS(status);
+  }
+
+  return EXIT_SUCCESS;
 }
