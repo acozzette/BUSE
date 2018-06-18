@@ -34,6 +34,16 @@ start reading and writing files on it:
     mkfs.ext4 /dev/nbd0
     mount /dev/nbd0 /mnt
 
+BUSE should gracefuly disconnect from block device upon receiving SIGINT
+or SIGTERM. However, if something goes wrong, block device is stuck in
+unusable state and BUSE process exited or hung you can request
+disconnect by:
+
+    nbd-client -d /dev/nbd0
+
+Actually this command performs clean disconnect and can also be used
+to terminate running instance of BUSE.
+
 ## Tests
 
 To perform checks you can run scripts in `test/` directory. They require:
