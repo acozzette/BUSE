@@ -7,7 +7,7 @@ CC		:= /usr/bin/gcc
 CFLAGS		:= -g -pedantic -Wall -Wextra -std=c99
 LDFLAGS		:= -L. -lbuse
 
-.PHONY: all clean
+.PHONY: all clean test
 all: $(TARGET)
 
 $(TARGET): %: %.o $(STATIC_LIB)
@@ -21,6 +21,9 @@ $(STATIC_LIB): $(LIBOBJS)
 
 $(LIBOBJS): %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
+
+test: $(TARGET)
+	PATH=$(PWD):$$PATH sudo test/busexmp.sh
 
 clean:
 	rm -f $(TARGET) $(OBJS) $(STATIC_LIB)
