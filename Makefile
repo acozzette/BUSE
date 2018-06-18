@@ -24,6 +24,7 @@ $(LIBOBJS): %.o: %.c
 
 test: $(TARGET)
 	PATH=$(PWD):$$PATH sudo test/busexmp.sh
+	PATH=$(PWD):$$PATH sudo test/signal_termination.sh
 
 clean:
 	rm -f $(TARGET) $(OBJS) $(STATIC_LIB)
