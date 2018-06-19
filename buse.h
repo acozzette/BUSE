@@ -4,11 +4,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
-  /* Most of this file was copied from nbd.h in the nbd distribution. */
-#include <linux/types.h>
+
 #include <sys/types.h>
-#include <linux/nbd.h>
 
   struct buse_operations {
     int (*read)(void *buf, u_int32_t len, u_int64_t offset, void *userdata);

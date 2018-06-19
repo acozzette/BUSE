@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <err.h>
 #include <fcntl.h>
-#include <linux/types.h>
+#include <linux/nbd.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
