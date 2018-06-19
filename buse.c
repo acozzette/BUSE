@@ -32,6 +32,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "buse.h"
@@ -229,7 +230,8 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
   err = ioctl(nbd, NBD_CLEAR_SOCK);
   assert(err != -1);
 
-  if (!fork()) {
+  pid_t pid = fork();
+  if (pid == 0) {
     /* Block all signals to not get interrupted in ioctl(NBD_DO_IT), as
      * it seems there is no good way to handle such interruption.*/
     sigset_t sigset;
@@ -238,7 +240,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       sigprocmask(SIG_SETMASK, &sigset, NULL) != 0
     ) {
       warn("failed to block signals in child");
-      return EXIT_FAILURE;
+      exit(EXIT_FAILURE);
     }
 
     /* The child needs to continue setting things up. */
@@ -247,7 +249,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
 
     if(ioctl(nbd, NBD_SET_SOCK, sk) == -1){
       fprintf(stderr, "ioctl(nbd, NBD_SET_SOCK, sk) failed.[%s]\n", strerror(errno));
-      return EXIT_FAILURE;
+      exit(EXIT_FAILURE);
     }
 #if defined NBD_SET_FLAGS && defined NBD_FLAG_SEND_TRIM
     else if(ioctl(nbd, NBD_SET_FLAGS, NBD_FLAG_SEND_TRIM) == -1){
@@ -259,7 +261,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       fprintf(stderr, "nbd device terminated with code %d\n", err);
       if (err == -1) {
         fprintf(stderr, "%s\n", strerror(errno));
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
       }
     }
 
@@ -268,7 +270,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       ioctl(nbd, NBD_CLEAR_SOCK) == -1
     ) {
       fprintf(stderr, "failed to perform nbd cleanup actions: %s\n", strerror(errno));
-      return EXIT_FAILURE;
+      exit(EXIT_FAILURE);
     }
 
     exit(0);
@@ -298,5 +300,20 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
 
   close(sp[1]);
 
-  return serve_nbd(sp[0], aop, userdata);
+  /* serve NBD socket */
+  int status;
+  status = serve_nbd(sp[0], aop, userdata);
+  if (close(sp[0]) != 0) warn("problem closing server side nbd socket");
+  if (status != 0) return status;
+
+  /* wait for subprocess */
+  if (waitpid(pid, &status, 0) == -1) {
+    warn("waitpid failed");
+    return EXIT_FAILURE;
+  }
+  if (WEXITSTATUS(status) != 0) {
+    return WEXITSTATUS(status);
+  }
+
+  return EXIT_SUCCESS;
 }
