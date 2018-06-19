@@ -199,7 +199,7 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
 int buse_main(const char* dev_file, const struct buse_operations *aop, void *userdata)
 {
   int sp[2];
-  int nbd, sk, err, tmp_fd;
+  int nbd, sk, err;
 
   err = socketpair(AF_UNIX, SOCK_STREAM, 0, sp);
   assert(!err);
@@ -295,14 +295,6 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
     warn("failed to register signal handlers in parent");
     return EXIT_FAILURE;
   }
-
-  /* The parent opens the device file at least once, to make sure the
-   * partition table is updated. Then it closes it and starts serving up
-   * requests. */
-
-  tmp_fd = open(dev_file, O_RDONLY);
-  assert(tmp_fd != -1);
-  close(tmp_fd);
 
   close(sp[1]);
 
