@@ -53,3 +53,7 @@ To perform checks you can run scripts in `test/` directory. They require:
 
 `make test` will run all test scripts with BUSE added to PATH and using
 sudo to grant permissions.
+
+To increase verbosity define `BUSE_DEBUG`. You can do this in make command:
+
+    make test CFLAGS=-DBUSE_DEBUG
