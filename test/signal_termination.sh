@@ -2,6 +2,7 @@
 set -e
 
 BLOCKDEV=/dev/nbd0
+SIZE=16M
 
 # verify if blockdev is not currently in use
 set +e
@@ -19,7 +20,7 @@ function cleanup () {
 trap cleanup EXIT
 
 # attach BUSE device
-busexmp "$BLOCKDEV" &
+busexmp "$SIZE" "$BLOCKDEV" &
 BUSEPID=$!
 
 # wait a bit ensure buse is running and connected to device
@@ -31,7 +32,7 @@ kill -s SIGTERM $BUSEPID
 wait $BUSEPID
 
 # attach BUSE again to verify if device is left in usable state
-busexmp "$BLOCKDEV" &
+busexmp "$SIZE" "$BLOCKDEV" &
 BUSEPID=$!
 sleep 1
 nbd-client -c "$BLOCKDEV" > /dev/null

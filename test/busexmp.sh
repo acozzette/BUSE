@@ -29,7 +29,7 @@ TESTFILE=$(mktemp)
 $DD if=/dev/urandom of="$TESTFILE" bs=16M count=1
 
 # attach BUSE device
-busexmp "$BLOCKDEV" &
+busexmp 128M "$BLOCKDEV" &
 sleep 1
 BUSEPID=$!
 
