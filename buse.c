@@ -37,6 +37,10 @@
 
 #include "buse.h"
 
+#ifndef BUSE_DEBUG
+  #define BUSE_DEBUG (0)
+#endif
+
 /*
  * These helper functions were taken from cliserv.h in the nbd distribution.
  */
@@ -137,7 +141,7 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
        * and writes.
        */
     case NBD_CMD_READ:
-      fprintf(stderr, "Request for read of size %d\n", len);
+      if (BUSE_DEBUG) fprintf(stderr, "Request for read of size %d\n", len);
       /* Fill with zero in case actual read is not implemented */
       chunk = malloc(len);
       if (aop->read) {
@@ -152,7 +156,7 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
       free(chunk);
       break;
     case NBD_CMD_WRITE:
-      fprintf(stderr, "Request for write of size %d\n", len);
+      if (BUSE_DEBUG) fprintf(stderr, "Request for write of size %d\n", len);
       chunk = malloc(len);
       read_all(sk, chunk, len);
       if (aop->write) {
@@ -165,6 +169,7 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
       write_all(sk, (char*)&reply, sizeof(struct nbd_reply));
       break;
     case NBD_CMD_DISC:
+      if (BUSE_DEBUG) fprintf(stderr, "Got NBD_CMD_DISC\n");
       /* Handle a disconnect request. */
       if (aop->disc) {
         aop->disc(userdata);
@@ -172,6 +177,7 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
       return EXIT_SUCCESS;
 #ifdef NBD_FLAG_SEND_FLUSH
     case NBD_CMD_FLUSH:
+      if (BUSE_DEBUG) fprintf(stderr, "Got NBD_CMD_FLUSH\n");
       if (aop->flush) {
         reply.error = aop->flush(userdata);
       }
@@ -180,6 +186,7 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
 #endif
 #ifdef NBD_FLAG_SEND_TRIM
     case NBD_CMD_TRIM:
+      if (BUSE_DEBUG) fprintf(stderr, "Got NBD_CMD_TRIM\n");
       if (aop->trim) {
         reply.error = aop->trim(from, len, userdata);
       }
@@ -191,7 +198,7 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
     }
   }
   if (bytes_read == -1) {
-    fprintf(stderr, "%s\n", strerror(errno));
+    warn("error reading userside of nbd socket");
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
@@ -209,7 +216,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
   if (nbd == -1) {
     fprintf(stderr, 
         "Failed to open `%s': %s\n"
-        "Is kernel module `nbd' is loaded and you have permissions "
+        "Is kernel module `nbd' loaded and you have permissions "
         "to access the device?\n", dev_file, strerror(errno));
     return 1;
   }
@@ -258,9 +265,9 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
 #endif
     else{
       err = ioctl(nbd, NBD_DO_IT);
-      fprintf(stderr, "nbd device terminated with code %d\n", err);
+      if (BUSE_DEBUG) fprintf(stderr, "nbd device terminated with code %d\n", err);
       if (err == -1) {
-        fprintf(stderr, "%s\n", strerror(errno));
+        warn("NBD_DO_IT terminated with error");
         exit(EXIT_FAILURE);
       }
     }
@@ -269,7 +276,7 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       ioctl(nbd, NBD_CLEAR_QUE) == -1 ||
       ioctl(nbd, NBD_CLEAR_SOCK) == -1
     ) {
-      fprintf(stderr, "failed to perform nbd cleanup actions: %s\n", strerror(errno));
+      warn("failed to perform nbd cleanup actions");
       exit(EXIT_FAILURE);
     }
 
