@@ -207,7 +207,7 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
 int buse_main(const char* dev_file, const struct buse_operations *aop, void *userdata)
 {
   int sp[2];
-  int nbd, sk, err;
+  int nbd, sk, err, flags;
 
   err = socketpair(AF_UNIX, SOCK_STREAM, 0, sp);
   assert(!err);
@@ -258,12 +258,20 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
       fprintf(stderr, "ioctl(nbd, NBD_SET_SOCK, sk) failed.[%s]\n", strerror(errno));
       exit(EXIT_FAILURE);
     }
-#if defined NBD_SET_FLAGS && defined NBD_FLAG_SEND_TRIM
-    else if(ioctl(nbd, NBD_SET_FLAGS, NBD_FLAG_SEND_TRIM) == -1){
-      fprintf(stderr, "ioctl(nbd, NBD_SET_FLAGS, NBD_FLAG_SEND_TRIM) failed.[%s]\n", strerror(errno));
-    }
-#endif
     else{
+#if defined NBD_SET_FLAGS
+      flags = 0;
+#if defined NBD_FLAG_SEND_TRIM
+      flags |= NBD_FLAG_SEND_TRIM;
+#endif
+#if defined NBD_FLAG_SEND_FLUSH
+      flags |= NBD_FLAG_SEND_FLUSH;
+#endif
+      if (flags != 0 && ioctl(nbd, NBD_SET_FLAGS, flags) == -1){
+        fprintf(stderr, "ioctl(nbd, NBD_SET_FLAGS, %d) failed.[%s]\n", flags, strerror(errno));
+        exit(EXIT_FAILURE);
+      }
+#endif
       err = ioctl(nbd, NBD_DO_IT);
       if (BUSE_DEBUG) fprintf(stderr, "nbd device terminated with code %d\n", err);
       if (err == -1) {
