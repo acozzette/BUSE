@@ -21,10 +21,11 @@
 #define _LARGEFILE64_SOURCE
 
 #include <assert.h>
+#include <err.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/mount.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -34,7 +35,10 @@ static int fd;
 
 static void usage(void)
 {
-    fprintf(stderr, "Usage: loopback <phyical device> <virtual device>\n");
+    fprintf(stderr,
+        "Usage: loopback <phyical device or file> <virtual device>\n"
+        "  for example: loopback path/to/file /dev/nbd0\n"
+    );
 }
 
 static int loopback_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata)
@@ -77,7 +81,6 @@ static struct buse_operations bop = {
 int main(int argc, char *argv[])
 {
     struct stat buf;
-    int err;
     int64_t size;
 
     if (argc != 3) {
@@ -88,16 +91,17 @@ int main(int argc, char *argv[])
     fd = open(argv[1], O_RDWR|O_LARGEFILE);
     assert(fd != -1);
 
-    /* Let's verify that this file is actually a block device. We could support
-     * regular files, too, but we don't need to right now. */
-    fstat(fd, &buf);
-    assert(S_ISBLK(buf.st_mode));
+    /* Figure out the size of the file or underlying block device. */
+    if (fstat(fd, &buf) != 0) err(EXIT_FAILURE, NULL);
+    if (S_ISBLK(buf.st_mode)) {
+        /* it's a block dev */
+        if(ioctl(fd, BLKGETSIZE64, &size) != 0) err(EXIT_FAILURE, NULL);
+    } else {
+        /* a file */
+        size = buf.st_size;
+    }
 
-    /* Figure out the size of the underlying block device. */
-    err = ioctl(fd, BLKGETSIZE64, &size);
-    assert(err != -1);
-    (void)err;
-    fprintf(stderr, "The size of this device is %ld bytes.\n", size);
+    fprintf(stderr, "The size of this device/file is %ld bytes.\n", size);
     bop.size = size;
 
     buse_main(argv[2], &bop, NULL);

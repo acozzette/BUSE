@@ -1,21 +1,15 @@
 #!/usr/bin/env bash
 set -e
+source ./test/utils.sh
 
 BLOCKDEV=/dev/nbd0
 SIZE=16M
 
-# verify if blockdev is not currently in use
-set +e
-nbd-client -c "$BLOCKDEV" > /dev/null
-if [ $? -ne 1 ]; then
-	echo "device $BLOCKDEV is not ready to use (already in use or corrupted)"
-	exit 1
-fi
-set -e
+ensure_buse_device_free "$BLOCKDEV"
 
 # on exit make sure nbd is disconnected
 function cleanup () {
-	nbd-client -d "$BLOCKDEV" > /dev/null
+	disconnect_buse_device "$BLOCKDEV"
 }
 trap cleanup EXIT
 
