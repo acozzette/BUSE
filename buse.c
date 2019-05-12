@@ -158,7 +158,7 @@ static int serve_nbd(int sk, const struct buse_operations * aop, void * userdata
     case NBD_CMD_WRITE:
       if (BUSE_DEBUG) fprintf(stderr, "Request for write of size %d\n", len);
       chunk = malloc(len);
-      read_all(sk, chunk, len);
+      read_all(sk, (char*)chunk, len);
       if (aop->write) {
         reply.error = aop->write(chunk, len, from, userdata);
       } else {
