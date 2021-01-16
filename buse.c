@@ -74,9 +74,9 @@ static int read_all(int fd, char* buf, size_t count)
   return 0;
 }
 
-static int write_all(int fd, char* buf, size_t count)
+static void write_all(int fd, char* buf, size_t count)
 {
-  int bytes_written;
+  ssize_t bytes_written;
 
   while (count > 0) {
     bytes_written = write(fd, buf, count);
@@ -85,8 +85,6 @@ static int write_all(int fd, char* buf, size_t count)
     count -= bytes_written;
   }
   assert(count == 0);
-
-  return 0;
 }
 
 /* Signal handler to gracefully disconnect from nbd kernel driver. */
