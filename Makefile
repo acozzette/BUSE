@@ -8,10 +8,13 @@ override CFLAGS += -g -pedantic -Wall -Wextra -std=c99
 LDFLAGS		:= -L. -lbuse
 
 .PHONY: all clean test
-all: $(TARGET)
+all: $(TARGET) busevkrm
 
 $(TARGET): %: %.o $(STATIC_LIB)
 	$(CC) -o $@ $< $(LDFLAGS)
+
+busevkrm: busevkrm.o $(STATIC_LIB)
+	$(CC) -o $@ $< -lvulkan $(LDFLAGS)
 
 $(TARGET:=.o): %.o: %.c buse.h
 	$(CC) $(CFLAGS) -o $@ -c $<
