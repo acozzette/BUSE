@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     err = ioctl(fd, BLKGETSIZE64, &size);
     assert(err != -1);
     (void)err;
-    fprintf(stderr, "The size of this device is %ld bytes.\n", size);
+    fprintf(stderr, "The size of this device is %lld bytes.\n", size);
     bop.size = size;
 
     buse_main(argv[2], &bop, NULL);
