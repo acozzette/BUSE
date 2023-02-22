@@ -9,7 +9,7 @@ Implementing a block device with BUSE is fairly straightforward. Simply fill
 `struct buse_operations` (declared in `buse.h`) with function pointers that
 define the behavior of the block device, and set the size field to be the
 desired size of the device in bytes. Then call `buse_main` and pass it a
-pointer to this struct. `busexmp.c` is a simple example example that shows how
+pointer to this struct. `busexmp.c` is a simple example that shows how
 this is done.
 
 The implementation of BUSE itself relies on NBD, the Linux network block device,
